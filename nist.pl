@@ -1,8 +1,8 @@
 #!/usr/local/bin/perl
-#        $Id: nist.pl,v 1.9 1998/10/31 18:58:22 cinar Exp $
+#        $Id: nist.pl,v 1.10 1999/01/06 23:09:21 cinar Exp $
 #
 # Nist.pl to keep your system time up to date by using time servers.
-# Copyright (C) 1998 Ali Onur Cinar <root@zdo.com>
+# Copyright (C) 1998, 1999 Ali Onur Cinar <root@zdo.com>
 #
 # Latest version can be downloaded from:
 #
@@ -40,7 +40,8 @@ $diff = "$1$diff";
 
 if ($> ne 0)
 {
-	print STDERR "This program should run as root user to be able to update sytem date.\n"; exit;
+	print STDERR "This program should run as root user to be able to update sytem date.\n"; 
+	exit;
 }
 
 if ($timeserver =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/)
@@ -92,16 +93,16 @@ sub DateToSec
 {
 	$year = @_[0];$month = @_[1];$day = @_[2];
 	$hour = @_[3];$min = @_[4];$sec = @_[5];
- 	@monthday = (0,31,59,90,120,151,181,212,245,273,304,334,365);
+ 	@monthday = (0,31,59,90,120,151,181,212,242,273,303,334,365);
 
-	$year -= 95;			# 1996 - 1
+	$year -= 96;			# 1996 - 1
 	$datsec = $year*365;
 	&Gemore($year,4);
 	$datsec += $division;
 
 	$datsec += $monthday[$month-1];
-	&Gemore($year+1,4);
-	if ($division eq 0) {$datsec += 1;}    # look
+	&Gemore($year,4);
+	if (($division eq 0) && ($month gt 2)) {$datsec += 1;}    # look
 
 	$datsec += $day;
 	$datsec *= 86400;
@@ -129,7 +130,7 @@ sub SecToDate
 	$year = $division;;
 	$day = $rest;
 	&Gemore($year,4);
-	$year += ($division + 95);	# year found
+	$year += ($division + 96);	# year found
 	$day -= $division;
 
 	if($rest eq 0) {$monthlen[2] = 29;}
