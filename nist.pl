@@ -1,11 +1,12 @@
 #!/usr/local/bin/perl
-#        $Id: nist.pl,v 1.10 1999/01/06 23:09:21 cinar Exp $
+#        $Id: nist.pl,v 1.11 2000/01/05 02:21:12 cinar Exp $
 #
 # Nist.pl to keep your system time up to date by using time servers.
-# Copyright (C) 1998, 1999 Ali Onur Cinar <root@zdo.com>
+# Copyright (C) 1998, 1999, 2000 Ali Onur Cinar <root@zdo.com>
 #
 # Latest version can be downloaded from:
 #
+#  http://www.zdo.com
 #   ftp://hun.ece.drexel.edu/pub/cinar/nist*
 #   ftp://ftp.cpan.org/pub/CPAN/authors/id/A/AO/AOCINAR/nist*
 #   ftp://sunsite.unc.edu/pub/Linux/system/admin/timei/nist*
@@ -41,7 +42,7 @@ $diff = "$1$diff";
 if ($> ne 0)
 {
 	print STDERR "This program should run as root user to be able to update sytem date.\n"; 
-	exit;
+#	exit;
 }
 
 if ($timeserver =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/)
@@ -79,7 +80,7 @@ $datsec += $diff;
 &SecToDate($datsec);
 printf "Local time is  %02d-%02d-%02d %02d-%02d-%02d\n", $year, $month, $day, $hour, $min, $sec;
 print "Updating the system time. ";
-$date_command = sprintf ("$datepr %02d%02d%02d%02d19%02d.%02d",$month, $day, $hour,$min, $year, $sec);
+$date_command = sprintf ("$datepr %02d%02d%02d%02d20%02d.%02d",$month, $day, $hour,$min, $year, $sec);
 system ($date_command);
 print "Done.\n";
 
@@ -95,19 +96,19 @@ sub DateToSec
 	$hour = @_[3];$min = @_[4];$sec = @_[5];
  	@monthday = (0,31,59,90,120,151,181,212,242,273,303,334,365);
 
-	$year -= 96;			# 1996 - 1
-	$datsec = $year*365;
-	&Gemore($year,4);
-	$datsec += $division;
+	$year += 2000;
+	$year -= 1996;
 
-	$datsec += $monthday[$month-1];
-	&Gemore($year,4);
-	if (($division eq 0) && ($month gt 2)) {$datsec += 1;}    # look
+	$day  += ($year*365);
+	&Gemore($year-1,4);
+	$day  += $division;
+	$day  += $monthday[$month-1];
+	
+	if ((year%4 == 0) && ($month > 2)) { $day += 1; }
 
-	$datsec += $day;
-	$datsec *= 86400;
-	$datsec += ($hour*3600);
-	$datsec += ($min*60);
+	$datsec = $day * 86400;
+	$datsec += $hour * 3600;
+	$datsec += $min * 60;
 	$datsec += $sec;
 }
 
@@ -115,31 +116,39 @@ sub SecToDate
 {
 	$datsec = @_[0];
 	@monthlen = (0,31,28,31,30,31,30,31,31,30,31,30,31);
-	$counter = 0;
 
+	$month = 1;
+	
 	&Gemore($datsec,86400);
 	$day = $division;
-	$sdtmp = $rest;
-	&Gemore($sdtmp,3600);
-	$hour = $division;		# hour found
-	$sdtmp = $rest;
-	&Gemore($sdtmp,60);
-	$min = $division;		# min found
-	$sec = $rest;			# sec found
+	$buf = $rest;
+
+	&Gemore($buf,3600);
+	$hour = $division;
+	$buf  = $rest;
+
+	&Gemore($buf,60);
+	$min  = $division;
+	$sec  = $rest;
+
 	&Gemore($day,365);
-	$year = $division;;
-	$day = $rest;
-	&Gemore($year,4);
-	$year += ($division + 96);	# year found
+	$year = $division;
+	$day  = $rest;
+
+	&Gemore($year-1,4);
 	$day -= $division;
 
-	if($rest eq 0) {$monthlen[2] = 29;}
-	while ($day>0)
+	if ($year%4 == 0) { $montlen[2] = 29; }
+
+	while ($day > $montlen[$month])
 	{
-		$counter++; $day -= $monthlen[$counter];
+	  $day -= $monthlen[$month];
+	  $month += 1;
 	}
 
-	$month = $counter;		# month found
-	$day += $monthlen[$counter];
-}
+	$month -=1;
+	$day += $monthlen[$month];
 
+	$year += 1996;
+	$year -= 2000;
+}
