@@ -1,6 +1,6 @@
 Begin3
 Title:          nist
-Version:        1.1.10
+Version:        1.1.12
 Entered-date:   06Jan99
 Description:    Update system time from NIST time server.
 Keywords:       nist, time, date, update, ntp, syncronise

@@ -1,12 +1,13 @@
 #!/usr/local/bin/perl
-#        $Id: nist.pl,v 1.11 2000/01/05 02:21:12 cinar Exp $
+#        $Id: nist.pl,v 1.12 2000/02/07 07:02:18 j Exp $
 #
 # Nist.pl to keep your system time up to date by using time servers.
 # Copyright (C) 1998, 1999, 2000 Ali Onur Cinar <root@zdo.com>
+# Y2K fixes by Frank Denis aka Jedi/Sector One <j@4u.net>
 #
 # Latest version can be downloaded from:
 #
-#  http://www.zdo.com
+#   http://www.zdo.com
 #   ftp://hun.ece.drexel.edu/pub/cinar/nist*
 #   ftp://ftp.cpan.org/pub/CPAN/authors/id/A/AO/AOCINAR/nist*
 #   ftp://sunsite.unc.edu/pub/Linux/system/admin/timei/nist*
@@ -28,10 +29,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 use Socket qw(PF_INET SOCK_STREAM AF_INET);
+use POSIX qw(mktime);
 
 $timeserver = 'time_a.timefreq.bldrdoc.gov';	# time server
 $port = '13';					# time port (default:13)
-$timediff = '-05:00:00';			# time differance
+$timediff = '+01:00:00';			# time differance
 $datepr = '/bin/date';				# full path of date
 
 
@@ -78,77 +80,25 @@ print "Current GMT is $1-$2-$3 $4-$5-$6\n";
 &DateToSec($1,$2,$3,$4,$5,$6);
 $datsec += $diff;
 &SecToDate($datsec);
+
 printf "Local time is  %02d-%02d-%02d %02d-%02d-%02d\n", $year, $month, $day, $hour, $min, $sec;
 print "Updating the system time. ";
-$date_command = sprintf ("$datepr %02d%02d%02d%02d20%02d.%02d",$month, $day, $hour,$min, $year, $sec);
+$date_command = sprintf ("$datepr %02d%02d%02d%02d%04d.%02d",$month, $day, $hour,$min, $year, $sec);
 system ($date_command);
 print "Done.\n";
-
-sub Gemore
-{
-	$rest = ($_[0]%$_[1]);
-	$division = (($_[0] - $rest) / $_[1]);
-}
 
 sub DateToSec
 {
 	$year = @_[0];$month = @_[1];$day = @_[2];
 	$hour = @_[3];$min = @_[4];$sec = @_[5];
- 	@monthday = (0,31,59,90,120,151,181,212,242,273,303,334,365);
-
-	$year += 2000;
-	$year -= 1996;
-
-	$day  += ($year*365);
-	&Gemore($year-1,4);
-	$day  += $division;
-	$day  += $monthday[$month-1];
-	
-	if ((year%4 == 0) && ($month > 2)) { $day += 1; }
-
-	$datsec = $day * 86400;
-	$datsec += $hour * 3600;
-	$datsec += $min * 60;
-	$datsec += $sec;
+	$datsec = POSIX::mktime($sec, $min, $hour, $day - 1, $month - 1, $year + 100);
 }
 
 sub SecToDate
 {
 	$datsec = @_[0];
-	@monthlen = (0,31,28,31,30,31,30,31,31,30,31,30,31);
-
-	$month = 1;
-	
-	&Gemore($datsec,86400);
-	$day = $division;
-	$buf = $rest;
-
-	&Gemore($buf,3600);
-	$hour = $division;
-	$buf  = $rest;
-
-	&Gemore($buf,60);
-	$min  = $division;
-	$sec  = $rest;
-
-	&Gemore($day,365);
-	$year = $division;
-	$day  = $rest;
-
-	&Gemore($year-1,4);
-	$day -= $division;
-
-	if ($year%4 == 0) { $montlen[2] = 29; }
-
-	while ($day > $montlen[$month])
-	{
-	  $day -= $monthlen[$month];
-	  $month += 1;
-	}
-
-	$month -=1;
-	$day += $monthlen[$month];
-
-	$year += 1996;
-	$year -= 2000;
+	($sec, $min, $hour, $day, $month, $year, $wday, $yday, $isdst) = localtime($datsec);
+	$day++;
+	$month++;
+	$year += 1900;
 }
